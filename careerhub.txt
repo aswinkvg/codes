@@ -1,0 +1,308 @@
+use carrer_hub_db;
+show tables;
+
+insert into companies(companyname, location) 
+values
+('xyz company', 'mumbai'),
+('abc company', 'chennai'),
+('btc company', 'delhi'),
+('hexaware technologies', 'chennai'),
+('kvb company', 'mumbai');
+
+insert into jobs(companies_id,jobtitle, jobdescription, joblocation, salary, jobtype, posteddate)
+values
+(3,'python developer', 'develop software applications', 'delhi', 30000, 'full-time', '2024-04-02'),
+(1,'backend developer', 'develop software applications', 'mumbai', 28000, 'full-time', '2024-03-09'),
+(4,'frontend developer', 'design and develop UI/UX', 'chennai', 15000, 'full-time', '2024-03-13'),
+(2,'marketing manager', 'developing marketing ideas', 'chennai', 18000, 'par-time', '2024-03-21'),
+(5,'data scientist', 'analysing data sets', 'bangalore',10000, 'full-time', '2022-12-12');
+
+insert into applicants(first_name, last_name, email, phone,resume) 
+values
+('harry', 'potter', 'harry@gmail.com', '9876543210', 'harryresume.pdf'),
+('hermione', 'granger', 'hermione@gmail.com', '9365786567', 'hermioneresume.pdf'),
+('ronald', 'weasley', 'ronald@gmail.com', '9756565656', 'ronaldresume.pdf'),
+('draco', 'malfoy', 'draco@gmail.com', '9856732014', 'dracoresume.pdf'),
+('albus','dumbledore','albus@gmail.com', '9797686852', 'albusresume.pdf');
+
+insert into applications(jobs_id,applicants_id,application_date,cover_letter)
+values
+(4, 1, '2024-03-01', 'cover_letter.pdf'),
+(1,1,'2024-03-04', 'cover_letter1.pdf'),
+(5, 4,'2024-01-13', 'cover_letter2.pdf'),
+(2, 3,'2024-01-04', 'cover_letter_name.pdf'),
+(3, 2,'2024-01-03', 'name_cover_letter1.pdf'),
+(4, 5,'2024-02-05', 'cover_letter_dob.pdf');
+
+
+-- Tasks
+ /*5. Write an SQL query to count the number of applications received for each job listing in the
+"Jobs" table. Display the job title and the corresponding application count. Ensure that it lists alljobs, even if they have no applications.
+projection:jobs
+criteria:applications
+*/
+
+select j.jobtitle,count(a.id) as num_of_applications from
+jobs j LEFT JOIN applications a ON j.id=a.jobs_id
+group by j.jobtitle;
+/*
+output:
+# jobtitle, num_of_applications
+'backend developer', '1'
+'data scientist', '1'
+'frontend developer', '1'
+'marketing manager', '2'
+'python developer', '1'
+*/
+
+/*
+
+6. Develop an SQL query that retrieves job listings from the "Jobs" table within a specified salary
+range. Allow parameters for the minimum and maximum salary values. Display the job title,
+company name, location, and salary for each matching job.
+projection:company
+criteria:jobs
+*/
+select c.companyname,j.jobtitle,c.location,j.salary from
+companies c JOIN jobs j ON c.id=j.companies_id
+where salary between 15000 and 30000
+;
+/*
+output:
+# companyname, jobtitle, location, salary
+'btc company', 'python developer', 'delhi', '30000'
+'xyz company', 'backend developer', 'mumbai', '28000'
+'hexaware technologies', 'frontend developer', 'chennai', '15000'
+'abc company', 'marketing manager', 'chennai', '18000'
+*/
+
+/*7. Write an SQL query that retrieves the job application history for a specific applicant. Allow a
+parameter for the ApplicantID, and return a result set with the job titles, company names, and
+application dates for all the jobs the applicant has applied to.
+projection:company,job,application
+criteria:applicants
+*/
+select c.companyname,j.jobtitle,ap.application_date from
+companies c 
+JOIN jobs j ON c.id=j.companies_id
+JOIN applications ap ON j.id=ap.jobs_id
+JOIN applicants a ON ap.applicants_id=a.id
+where a.id=1;
+/*
+output:
+# companyname, jobtitle, application_date
+'btc company', 'python developer', '2024-03-04'
+'abc company', 'marketing manager', '2024-03-01'
+*/
+/*8. Create an SQL query that calculates and displays the average salary offered by all companies for
+job listings in the "Jobs" table. Ensure that the query filters out jobs with a salary of zero.
+projection : job
+crieteria:companies*/
+
+select c.companyname,AVG(j.salary) as avg_salary 
+from  companies c JOIN jobs j ON c.id=j.companies_id
+group by c.companyname
+having avg_salary > 0;
+
+/*
+output:
+# companyname, avg_salary
+'abc company', '18000.0000'
+'btc company', '30000.0000'
+'hexaware technologies', '15000.0000'
+'kvb company', '10000.0000'
+'xyz company', '28000.0000'
+*/
+/*9. Write an SQL query to identify the company that has posted the most job listings. Display the
+company name along with the count of job listings they have posted. Handle ties if multiple
+companies have the same maximum count.
+projection:company
+crietria:jobs
+*/
+select c.companyname,count(j.id) as count_of_jobs
+from  companies c JOIN jobs j ON c.id=j.companies_id
+Group by c.companyname
+order by count_of_jobs DESC
+limit 1;
+/*
+output:
+# companyname, count_of_jobs
+'xyz company', '1'
+*/
+/*
+10.10. Find the applicants who have applied for positions in companies located in 'CityX' and have at
+least 3 years of experience
+projection:applicant,companies,
+crieteria:company
+*/
+select CONCAT(a.first_name, a.last_name) as applicantname,c.companyname,c.location from 
+applications ap 
+JOIN applicants a ON a.id=ap.applicants_id 
+JOIN jobs j ON j.id=ap.jobs_id 
+JOIN companies c ON j.companies_id=c.id
+where c.location='chennai';
+/*
+output:
+# applicantname, companyname, location
+'harrypotter', 'abc company', 'chennai'
+'hermionegranger', 'hexaware technologies', 'chennai'
+'albusdumbledore', 'abc company', 'chennai'
+*/
+
+/*11.Retrieve a list of distinct job titles with salaries between $60,000 and $80,000.
+*/
+select distinct jobtitle from 
+jobs
+where salary between 60000 and 80000;
+/*
+output:
+
+jobtitle
+
+*/
+
+-- 12 Find the jobs that have not received any applications.
+-- projection:jobs
+-- crieteria:applications
+select * from 
+jobs
+where id NOT IN (select ap.jobs_id from 
+				 jobs j JOIN applications ap ON j.id=ap.jobs_id); 
+
+/*
+output:
+# id, companies_id, jobtitle, jobdescription, joblocation, salary, jobtype, posteddate
+
+/*
+
+/*
+13. Retrieve a list of job applicants along with the companies they have applied to and the positions
+they have applied for.
+projection:applicants,companies,positions
+*/
+select CONCAT(a.first_name,a.last_name) as applicant,c.companyname,j.jobtitle  from
+companies c 
+JOIN jobs j ON c.id=j.companies_id
+JOIN applications ap ON j.id=ap.jobs_id
+JOIN applicants a ON ap.applicants_id=a.id;
+/*
+output:
+# applicant, companyname, jobtitle
+'harrypotter', 'btc company', 'python developer'
+'ronaldweasley', 'xyz company', 'backend developer'
+'hermionegranger', 'hexaware technologies', 'frontend developer'
+'harrypotter', 'abc company', 'marketing manager'
+'albusdumbledore', 'abc company', 'marketing manager'
+'dracomalfoy', 'kvb company', 'data scientist'
+*/
+/*
+14. Retrieve a list of companies along with the count of jobs they have posted, even if they have not
+received any applications.
+projection :company
+criteria:jobs
+*/
+select c.companyname,count(j.id) as job_count from
+companies c 
+LEFT JOIN jobs j ON c.id=j.companies_id
+group by c.companyname;
+/*
+output:
+# companyname, job_count
+'abc company', '1'
+'btc company', '1'
+'hexaware technologies', '1'
+'kvb company', '1'
+'xyz company', '1'
+
+*/
+
+/*15. List all applicants along with the companies and positions they have applied for, including those
+who have not applied.
+projection:applicants
+criteria :jobs
+*/
+select a.id,a.first_name, a.last_name, c.companyname, j.jobtitle 
+from applications ap 
+right JOIN applicants a ON ap.applicants_id=a.id 
+JOIN jobs j ON j.id=ap.jobs_id 
+JOIN companies c ON c.id=j.companies_id;
+/*
+output:
+# id, first_name, last_name, companyname, jobtitle
+'1', 'harry', 'potter', 'btc company', 'python developer'
+'3', 'ronald', 'weasley', 'xyz company', 'backend developer'
+'2', 'hermione', 'granger', 'hexaware technologies', 'frontend developer'
+'1', 'harry', 'potter', 'abc company', 'marketing manager'
+'5', 'albus', 'dumbledore', 'abc company', 'marketing manager'
+'4', 'draco', 'malfoy', 'kvb company', 'data scientist'
+*/
+
+/*16-Find companies that have posted jobs with a salary higher than the average salary of all jobs.
+projection:companies
+criteria:jobs
+*/
+select c.companyname,j.salary from
+companies c JOIN jobs j ON c.id=j.companies_id
+group by c.companyname
+having j.salary > (select AVG(salary)
+					from jobs);
+/*
+output:
+# companyname, salary
+'btc company', '30000'
+'xyz company', '28000'
+*/
+/*
+17 Display a list of applicants with their names and a concatenated string of their city and state.
+*/
+
+/*18)Retrieve a list of jobs with titles containing either 'Developer' or 'Engineer'.
+*/
+select * from 
+jobs
+where jobtitle LIKE '%Developer%' OR '%ENGINEER%';
+/*
+output:
+# id, companies_id, jobtitle, jobdescription, joblocation, salary, jobtype, posteddate
+'1', '3', 'python developer', 'develop software applications', 'delhi', '30000', 'full-time', '2024-04-02'
+'2', '1', 'backend developer', 'develop software applications', 'mumbai', '28000', 'full-time', '2024-03-09'
+'3', '4', 'frontend developer', 'design and develop UI/UX', 'chennai', '15000', 'full-time', '2024-03-13'
+*/
+/*19. Retrieve a list of applicants and the jobs they have applied for, including those who have not
+applied and jobs without applicants.
+projection:applicants,job
+crieteria applications
+*/
+select CONCAT(a.first_name,a.last_name) as applicantname,j.jobtitle from 
+jobs j 
+RIGHT JOIN applications ap ON j.id=ap.jobs_id
+RIGHT JOIN applicants a ON ap.applicants_id=a.id;
+/*
+output:
+# applicantname, jobtitle
+'harrypotter', 'marketing manager'
+'harrypotter', 'python developer'
+'hermionegranger', 'frontend developer'
+'ronaldweasley', 'backend developer'
+'dracomalfoy', 'data scientist'
+'albusdumbledore', 'marketing manager'
+*/
+/*
+20. List all combinations of applicants and companies where the company is in a specific city and the
+applicant has more than 2 years of experience. For example: city=Chennai
+projection:applicants
+criteria:companies
+*/
+select CONCAT(a.first_name,a.last_name) as applicantname,c.companyname,c.location from 
+applicants a
+JOIN applications ap ON a.id=ap.applicants_id
+JOIN jobs j ON ap.jobs_id=j.id
+JOIN companies c ON j.companies_id=c.id
+where c.location ='chennai';
+/*
+output:
+# applicantname, companyname, location
+'harrypotter', 'abc company', 'chennai'
+'hermionegranger', 'hexaware technologies', 'chennai'
+'albusdumbledore', 'abc company', 'chennai'
+*/
